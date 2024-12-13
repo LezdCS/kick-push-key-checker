@@ -19,7 +19,7 @@ export const firebase = admin.apps.length
   ? admin.app()
   : admin.initializeApp(config);
 
-export async function scrapeWebsite(url: string): Promise<string | null> {
+export async function scrapeWebsite(url: string): Promise<{ pusherAppKey: string | null, pusherCluster: string | null }> {
   const p = puppeteer.default;
   p.use(stealthPlugin());
 
@@ -31,6 +31,7 @@ export async function scrapeWebsite(url: string): Promise<string | null> {
   await cdp.send('Page.enable');
 
   let pusherAppKey: string | null = null;
+  let pusherCluster: string | null = null;
   cdp.on('Network.webSocketCreated', ({requestId, url}) => {
     console.log('Network.webSocketCreated', requestId, url)
     // Regex breakdown:
@@ -45,20 +46,32 @@ export async function scrapeWebsite(url: string): Promise<string | null> {
       pusherAppKey = match[1];
       console.log('Pusher App Key:', pusherAppKey);
     }
+    const pusherClusterRegex = /ws-([a-z0-9]+)\.pusher\.com/;
+    const matchCluster = url.match(pusherClusterRegex);
+    if (matchCluster) {
+      pusherCluster = matchCluster[1];
+      console.log('Pusher Cluster:', pusherCluster);
+    }
   })
 
   await page.goto(url);
   await browser.close();
 
-  return pusherAppKey;
+  return { pusherAppKey, pusherCluster };
 }
 
 if (import.meta.main) {
-  const pusherAppKey = await scrapeWebsite('https://kick.com/xqc');
-  if (pusherAppKey) {
-    connect_pusher(pusherAppKey, 'us2');
-    // await updateRemoteConfigValue('test_key', pusherAppKey);
+  const { pusherAppKey, pusherCluster } = await scrapeWebsite('https://kick.com/xqc');
+  if (pusherAppKey && pusherCluster) {
+    try {
+      await connect_pusher(pusherAppKey, pusherCluster);
+      console.log("Connected to Pusher")
+      await updateRemoteConfigValue('test_key', pusherAppKey);
+      Deno.exit(0);
+    } catch (error) {
+      console.error('Pusher connection failed:', error);
+    }
   } else {
-    console.error('No Pusher App Key found');
+    console.error('No Pusher App Key or Cluster found');
   }
 }

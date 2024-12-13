@@ -2,7 +2,7 @@ import pusher from 'pusher-js';
 // deno-lint-ignore no-explicit-any
 const Pusher = pusher as any as typeof pusher.default;
 
-export const connect_pusher = (pusherAppKey: string, cluster: string) => {
+export const connect_pusher = (pusherAppKey: string, cluster: string) : Promise<void> => {
   const pusher = new Pusher(pusherAppKey, {
     cluster: cluster,
   });
@@ -22,13 +22,19 @@ export const connect_pusher = (pusherAppKey: string, cluster: string) => {
     console.log('Raw message:', message);
   });
 
-  pusher.connection.bind('state_change', (states: {
-    previous: string;
-    current: string;
-  }) => {
-    console.log('Connection state changed from', states.previous, 'to', states.current);
-    if (states.current === 'connected') {
-      console.log('Connected to Pusher');
-    }
+  return new Promise((resolve, reject) => {
+    pusher.connection.bind('state_change', (states: {
+      previous: string;
+      current: string;
+    }) => {
+      console.log('Connection state changed from', states.previous, 'to', states.current);
+      if (states.current === 'connected') {
+        pusher.disconnect();
+        resolve();
+      } else if (states.current === 'unavailable') {
+        pusher.disconnect();
+        reject(new Error('Pusher connection failed'));
+      }
+    });
   });
 }
