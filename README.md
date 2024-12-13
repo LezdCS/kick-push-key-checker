@@ -1,11 +1,14 @@
 # Kick.com Pusher Config Extractor
 
-A tool for automatically extracting Pusher configuration from Kick.com and updating Firebase Remote Config.
+A tool for automatically extracting Pusher configuration from Kick.com and
+updating Firebase Remote Config.
 
 ## Purpose
 
 This tool helps maintain up-to-date Pusher configuration for Kick.com by:
-1. Automatically scraping Kick.com to extract their Pusher app key and cluster information
+
+1. Automatically scraping Kick.com to extract their Pusher app key and cluster
+   information
 2. Updating Firebase Remote Config with the latest values
 3. Enabling automated monitoring of Kick.com's WebSocket configuration changes
 
@@ -31,5 +34,3 @@ This tool helps maintain up-to-date Pusher configuration for Kick.com by:
 1. Clone the repository
 2. Copy `.env.sample` to `.env` and configure your Firebase credentials
 3. Run development server:
-
-
