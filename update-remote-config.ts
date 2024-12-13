@@ -17,9 +17,10 @@ export async function updateRemoteConfigValue(key: string, value: string) {
 
     // Publish the updated template
     await remoteConfig.publishTemplate(template);
-    console.log(`Successfully updated remote config value for key: ${key}`);
+    console.log(`%cSuccessfully updated remote config for key: %c${key}%c to value: %c${value}`, 
+      "color: green", "color: blue; font-weight: bold", "color: green", "color: blue; font-weight: bold");
   } catch (error) {
-    console.error("Error updating remote config:", error);
+    console.error("%cError updating remote config: %c%o", "color: red; font-weight: bold", "color: red", error);
     throw error;
   }
 }

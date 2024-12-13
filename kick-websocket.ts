@@ -27,7 +27,7 @@ export const connect_pusher = (pusherAppKey: string, cluster: string) : Promise<
       previous: string;
       current: string;
     }) => {
-      console.log('Connection state changed from', states.previous, 'to', states.current);
+      //   console.log('Connection state changed from', states.previous, 'to', states.current);
       if (states.current === 'connected') {
         pusher.disconnect();
         resolve();
