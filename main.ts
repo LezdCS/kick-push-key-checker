@@ -79,7 +79,7 @@ if (import.meta.main) {
       });
     }
 
-    const notFoundHtml = render(h(NotFoundPage));
+    const notFoundHtml = render(h(NotFoundPage, {}));
     return new Response(notFoundHtml, {
       status: 404,
       headers: { "content-type": "text/html" },
