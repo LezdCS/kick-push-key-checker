@@ -5,6 +5,12 @@ import { connect_pusher } from "./kick-websocket.ts";
 import { scrapeWebsite } from "./scrapper.ts";
 
 const privateKey = Deno.env.get("FIREBASE_PRIVATE_KEY")?.replace(/\\n/gm, "\n");
+if (!privateKey) {
+  throw new Error("FIREBASE_PRIVATE_KEY is not set");
+}
+
+let latest_key = ""
+let latest_cluster = ""
 
 const config = {
   credential: admin.credential.cert({
@@ -33,9 +39,9 @@ export async function run() {
 
       await updateRemoteConfigValue(remoteConfigKey, pusherAppKey);
 
-      if (!Deno.env.get("DENO_DEPLOYMENT_ID")) {
-        Deno.exit(0);
-      }
+      latest_key = pusherAppKey
+      latest_cluster = pusherCluster
+
     } catch (error) {
       console.error('Pusher connection failed:', error);
     }
@@ -62,12 +68,58 @@ if (import.meta.main) {
       <html>
         <head>
           <title>IRL Link Status</title>
+          <style>
+            body {
+              font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+              max-width: 800px;
+              margin: 0 auto;
+              padding: 2rem;
+              background: #f5f5f5;
+              color: #333;
+            }
+            h1 {
+              text-align: center;
+              color: #2c3e50;
+              font-size: 2.5rem;
+              margin-bottom: 2rem;
+            }
+            .status {
+              background: white;
+              border-radius: 8px;
+              padding: 1.5rem;
+              margin-bottom: 1.5rem;
+              box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            .status h2 {
+              color: #3498db;
+              margin-top: 0;
+              font-size: 1.5rem;
+            }
+            .status p {
+              margin: 0;
+              font-size: 1.1rem;
+              line-height: 1.5;
+            }
+            .status:hover {
+              transform: translateY(-2px);
+              transition: transform 0.2s ease;
+              box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            }
+          </style>
         </head>
         <body>
-          <h1>IRL Link Status</h1>
+          <h1>Kick Pusher Status</h1>
           <div class="status">
             <h2>Service Status</h2>
             <p>The service is running and checking for Pusher updates every hour.</p>
+          </div>
+          <div class="status">
+            <h2>Latest Pusher App Key</h2>
+            <p>${latest_key}</p>
+          </div>
+          <div class="status">
+            <h2>Latest Pusher Cluster</h2>
+            <p>${latest_cluster}</p>
           </div>
         </body>
       </html>

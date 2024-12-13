@@ -1,50 +1,67 @@
 import puppeteer from "puppeteer-extra";
 import stealthPlugin from "puppeteer-extra-plugin-stealth";
 
-export async function scrapeWebsite(url: string): Promise<{ pusherAppKey: string | null, pusherCluster: string | null }> {
-    const p = puppeteer.default;
-    p.use(stealthPlugin());
+interface PusherConfig {
+  pusherAppKey: string | null;
+  pusherCluster: string | null;
+}
+
+export async function scrapeWebsite(url: string): Promise<PusherConfig> {
+  // Pre-compile regex patterns
+  const PUSHER_APP_KEY_REGEX = /app\/([a-f0-9]{20})/;
+  const PUSHER_CLUSTER_REGEX = /ws-([a-z0-9]+)\.pusher\.com/;
   
-    const browser = await p.launch();
+  try {
+    // Initialize puppeteer with stealth plugin
+    const browser = await puppeteer
+      .default
+      .use(stealthPlugin())
+      .launch({ 
+        headless: "new",  // Use new headless mode
+        args: ['--no-sandbox', '--disable-setuid-sandbox'] // Better compatibility
+      });
+
     const page = await browser.newPage();
-  
     const cdp = await page.target().createCDPSession();
-    await cdp.send('Network.enable');
-    await cdp.send('Page.enable');
-  
-    let pusherAppKey: string | null = null;
-    let pusherCluster: string | null = null;
-    cdp.on('Network.webSocketCreated', ({requestId, url}) => {
-      // console.log('Network.webSocketCreated', requestId, url)
-      // Regex breakdown:
-      // app/          - Matches literal "app/" in the URL
-      // (            - Start capturing group
-      //   [a-f0-9]   - Match any lowercase letter a-f or digit 0-9
-      //   {20}       - Exactly 20 characters of the above pattern
-      // )            - End capturing group
-      const pusherAppKeyRegex = /app\/([a-f0-9]{20})/;
-      const match = url.match(pusherAppKeyRegex);
-      if (match) {
-        pusherAppKey = match[1];
-        console.log('%cPusher App Key: %c%s', 'color: green', 'color: blue; font-weight: bold', pusherAppKey);
+    
+    // Enable required CDP domains in parallel
+    await Promise.all([
+      cdp.send('Network.enable'),
+      cdp.send('Page.enable')
+    ]);
+
+    const config: PusherConfig = {
+      pusherAppKey: null,
+      pusherCluster: null
+    };
+
+    cdp.on('Network.webSocketCreated', ({ url }) => {
+      // Check for app key
+      const appKeyMatch = url.match(PUSHER_APP_KEY_REGEX);
+      if (appKeyMatch) {
+        config.pusherAppKey = appKeyMatch[1];
+        console.log('%cPusher App Key: %c%s', 'color: green', 'color: blue; font-weight: bold', config.pusherAppKey);
       }
-      // Regex breakdown:
-      // ws-          - Matches literal "ws-" in the URL
-      // (            - Start capturing group
-      //   [a-z0-9]+  - Match one or more lowercase letters or digits
-      // )            - End capturing group
-      // \.pusher\.com - Matches literal ".pusher.com" in the URL
-      const pusherClusterRegex = /ws-([a-z0-9]+)\.pusher\.com/;
-      const matchCluster = url.match(pusherClusterRegex);
-      if (matchCluster) {
-        pusherCluster = matchCluster[1];
-        console.log('%cPusher Cluster: %c%s', 'color: green', 'color: blue; font-weight: bold', pusherCluster);
+
+      // Check for cluster
+      const clusterMatch = url.match(PUSHER_CLUSTER_REGEX);
+      if (clusterMatch) {
+        config.pusherCluster = clusterMatch[1];
+        console.log('%cPusher Cluster: %c%s', 'color: green', 'color: blue; font-weight: bold', config.pusherCluster);
       }
-    })
-  
-    await page.goto(url);
+    });
+
+    await page.goto(url, { 
+      waitUntil: 'networkidle0',  // Wait until network is idle
+      timeout: 30000  // 30 second timeout
+    });
+
     await browser.close();
-  
-    return { pusherAppKey, pusherCluster };
+    return config;
+
+  } catch (error) {
+    console.error('Scraping failed:', error);
+    throw error;
   }
+}
   
