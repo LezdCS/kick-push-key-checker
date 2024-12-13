@@ -1,7 +1,7 @@
-import { scrapeWebsite } from "./scrapper.ts";
+import { run } from "./main.ts";
 
 Deno.test(function scrapeWebsiteTest() {
-  scrapeWebsite('https://kick.com/xqc');
+  run();
 });
 
 

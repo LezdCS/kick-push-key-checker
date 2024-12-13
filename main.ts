@@ -18,18 +18,40 @@ export const firebase = admin.apps.length
   ? admin.app()
   : admin.initializeApp(config);
 
-if (import.meta.main) {
+export async function run() {
   const { pusherAppKey, pusherCluster } = await scrapeWebsite('https://kick.com/xqc');
+  
   if (pusherAppKey && pusherCluster) {
     try {
       await connect_pusher(pusherAppKey, pusherCluster);
-      console.log("%c🔌 Connected to Pusher successfully! ✅", "color: green")
-      await updateRemoteConfigValue('test_key', pusherAppKey);
-      Deno.exit(0);
+      console.log("%c🔌 Connected to Pusher successfully! ✅", "color: green");
+
+      const remoteConfigKey = Deno.env.get("REMOTE_CONFIG_KEY");
+      if (!remoteConfigKey) {
+        throw new Error("REMOTE_CONFIG_KEY is not set");
+      }
+
+      await updateRemoteConfigValue(remoteConfigKey, pusherAppKey);
+
+      if (!Deno.env.get("DENO_DEPLOYMENT_ID")) {
+        Deno.exit(0);
+      }
     } catch (error) {
       console.error('Pusher connection failed:', error);
     }
   } else {
     console.error('No Pusher App Key or Cluster found');
+  }
+}
+
+if (import.meta.main) {
+  // Run immediately once
+  await run();
+
+  if (Deno.env.get("DENO_DEPLOYMENT_ID")) {
+    // Then schedule to run every hour
+    Deno.cron("Check for new Pusher App Key", "0 * * * *", async () => {
+      await run();
+    });
   }
 }
