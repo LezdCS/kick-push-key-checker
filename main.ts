@@ -14,8 +14,9 @@ if (!privateKey) {
   throw new Error("FIREBASE_PRIVATE_KEY is not set");
 }
 
-let latest_key = ""
-let latest_cluster = ""
+let latest_key = "none"
+let latest_cluster = "none"
+let last_time_updated = "none"
 
 const config = {
   credential: admin.credential.cert({
@@ -46,6 +47,7 @@ export async function run() {
 
       latest_key = pusherAppKey
       latest_cluster = pusherCluster
+      last_time_updated = new Date().toISOString()
 
     } catch (error) {
       console.error('Pusher connection failed:', error);
@@ -57,7 +59,7 @@ export async function run() {
 
 if (import.meta.main) {
   // Run immediately once
-  await run();
+  // run();
 
   if (Deno.env.get("DENO_DEPLOYMENT_ID")) {
     // Then schedule to run every hour
@@ -69,7 +71,7 @@ if (import.meta.main) {
   // Start HTTP server
   Deno.serve({ port: 8000 }, (req) => {
     const html = render(
-      h(StatusPage, { latestKey: latest_key, latestCluster: latest_cluster })
+      h(StatusPage, { latestKey: latest_key, latestCluster: latest_cluster, lastTimeUpdated: last_time_updated })
     );
     
     return new Response(html, {

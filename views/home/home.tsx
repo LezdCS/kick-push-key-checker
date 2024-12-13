@@ -5,15 +5,16 @@ import { compileSass } from "../../utils/scss.ts";
 interface StatusPageProps {
   latestKey: string;
   latestCluster: string;
+  lastTimeUpdated: string;
 }
 
 const styles = await compileSass("./views/home/page.scss");
 
-export function StatusPage({ latestKey, latestCluster }: StatusPageProps) {
+export function StatusPage({ latestKey, latestCluster, lastTimeUpdated }: StatusPageProps) {
   return (
     <html>
       <head>
-        <title>IRL Link Status</title>
+        <title>Kick Pusher Status</title>
         <style>{styles}</style>
       </head>
       <body>
@@ -29,6 +30,10 @@ export function StatusPage({ latestKey, latestCluster }: StatusPageProps) {
         <div class="status">
           <h2>Latest Pusher Cluster</h2>
           <p>{latestCluster}</p>
+        </div>
+        <div class="status">
+          <h2>Last Time Updated</h2>
+          <p>{lastTimeUpdated}</p>
         </div>
       </body>
     </html>
