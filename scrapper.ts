@@ -18,7 +18,8 @@ export async function scrapeWebsite(url: string): Promise<PusherConfig> {
       .use(stealthPlugin())
       .launch({ 
         headless: true,  // Use new headless mode
-        args: ['--no-sandbox', '--disable-setuid-sandbox'] // Better compatibility
+        args: ['--no-sandbox', '--disable-setuid-sandbox'], // Better compatibility
+        // browserWSEndpoint: "wss://", TODO: Use ScrapingFish service so we can deploy this project on serverless
       });
 
     const page = await browser.newPage();
