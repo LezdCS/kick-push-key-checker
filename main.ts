@@ -54,4 +54,27 @@ if (import.meta.main) {
       await run();
     });
   }
+
+  // Start HTTP server
+  Deno.serve({ port: 8000 }, async (req) => {
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>IRL Link Status</title>
+        </head>
+        <body>
+          <h1>IRL Link Status</h1>
+          <div class="status">
+            <h2>Service Status</h2>
+            <p>The service is running and checking for Pusher updates every hour.</p>
+          </div>
+        </body>
+      </html>
+    `;
+    
+    return new Response(html, {
+      headers: { "content-type": "text/html" },
+    });
+  });
 }
