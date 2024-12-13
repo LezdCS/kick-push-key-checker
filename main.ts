@@ -60,14 +60,12 @@ export async function run() {
 
 if (import.meta.main) {
   // Run immediately once
-  // run();
+  run();
 
-  if (Deno.env.get("DENO_DEPLOYMENT_ID")) {
     // Then schedule to run every hour
     Deno.cron("Check for new Pusher App Key", "0 * * * *", async () => {
       await run();
     });
-  }
 
   // Start HTTP server
   Deno.serve({ port: 8000 }, (req) => {
