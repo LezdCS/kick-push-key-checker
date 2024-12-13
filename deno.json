@@ -8,6 +8,7 @@
     "firebase-admin": "npm:firebase-admin@^13.0.1",
     "puppeteer": "npm:puppeteer@^23.10.3",
     "puppeteer-extra": "npm:puppeteer-extra@^3.3.6",
-    "puppeteer-extra-plugin-stealth": "npm:puppeteer-extra-plugin-stealth@^2.11.2"
+    "puppeteer-extra-plugin-stealth": "npm:puppeteer-extra-plugin-stealth@^2.11.2",
+    "pusher-js": "npm:pusher-js@^8.4.0-rc2"
   }
 }

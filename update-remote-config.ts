@@ -3,7 +3,7 @@ import { firebase } from "./main.ts";
 export async function updateRemoteConfigValue(key: string, value: string) {
   try {
     const remoteConfig = firebase.remoteConfig();
-    
+
     // Get current template first
     const template = await remoteConfig.getTemplate();
     
