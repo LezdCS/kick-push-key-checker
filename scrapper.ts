@@ -17,7 +17,7 @@ export async function scrapeWebsite(url: string): Promise<PusherConfig> {
       .default
       .use(stealthPlugin())
       .launch({ 
-        headless: "new",  // Use new headless mode
+        headless: true,  // Use new headless mode
         args: ['--no-sandbox', '--disable-setuid-sandbox'] // Better compatibility
       });
 
