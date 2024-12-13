@@ -8,6 +8,7 @@ import { connect_pusher } from "./kick-websocket.ts";
 import { scrapeWebsite } from "./scrapper.ts";
 import { render } from "preact-render-to-string";
 import { StatusPage } from "./views/home/home.tsx";
+import { NotFoundPage } from "./views/404/page.tsx";
 
 const privateKey = Deno.env.get("FIREBASE_PRIVATE_KEY")?.replace(/\\n/gm, "\n");
 if (!privateKey) {
@@ -70,11 +71,19 @@ if (import.meta.main) {
 
   // Start HTTP server
   Deno.serve({ port: 8000 }, (req) => {
-    const html = render(
-      h(StatusPage, { latestKey: latest_key, latestCluster: latest_cluster, lastTimeUpdated: last_time_updated })
-    );
-    
-    return new Response(html, {
+    if (req.url.endsWith('/')) {
+      const html = render(
+        h(StatusPage, { latestKey: latest_key, latestCluster: latest_cluster, lastTimeUpdated: last_time_updated })
+      );
+      
+      return new Response(html, {
+        headers: { "content-type": "text/html" },
+      });
+    }
+
+    const notFoundHtml = render(h(NotFoundPage));
+    return new Response(notFoundHtml, {
+      status: 404,
       headers: { "content-type": "text/html" },
     });
   });
