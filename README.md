@@ -33,4 +33,8 @@ This tool helps maintain up-to-date Pusher configuration for Kick.com by:
 
 1. Clone the repository
 2. Copy `.env.sample` to `.env` and configure your Firebase credentials
-3. Run development server:
+3. Set up pre-commit hooks by running:
+   ```bash
+   chmod +x scripts/*.bash && ./scripts/install-hooks.bash
+   ```
+4. Run development server:
