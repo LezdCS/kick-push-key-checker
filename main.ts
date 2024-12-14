@@ -1,96 +1,103 @@
 /** @jsx h */
 import { h } from 'preact'
-
 import admin from 'firebase-admin'
 import 'jsr:@std/dotenv/load'
-import { updateRemoteConfigValue } from './update-remote-config.ts'
-import { connect_pusher } from './kick-websocket.ts'
-import { scrapeWebsite } from './scrapper.ts'
+import { updateRemoteConfigValue } from './utils/update-remote-config.ts'
+import { connect_pusher } from './utils/kick-websocket.ts'
+import { scrapeWebsite } from './utils/scrapper.ts'
 import { render } from 'preact-render-to-string'
 import { StatusPage } from './views/home/home.tsx'
 import { NotFoundPage } from './views/404/page.tsx'
 
-const privateKey = Deno.env.get('FIREBASE_PRIVATE_KEY')?.replace(/\\n/gm, '\n')
-if (!privateKey) {
-	throw new Error('FIREBASE_PRIVATE_KEY is not set')
+// Constants
+const KICK_URL = 'https://kick.com/xqc'
+const PORT = 8000
+const CRON_SCHEDULE = '0 * * * *'
+
+// State management
+const state = {
+	latestKey: 'none',
+	latestCluster: 'none',
+	lastTimeUpdated: 'none',
 }
 
-let latest_key = 'none'
-let latest_cluster = 'none'
-let last_time_updated = 'none'
-
-const config = {
-	credential: admin.credential.cert({
-		clientEmail: Deno.env.get('FIREBASE_CLIENT_EMAIL'),
-		privateKey: privateKey,
-		projectId: Deno.env.get('FIREBASE_PROJECT_ID'),
-	}),
-}
-
-export const firebase = admin.apps.length
-	? admin.app()
-	: admin.initializeApp(config)
-
-export async function run() {
-	const { pusherAppKey, pusherCluster } = await scrapeWebsite(
-		'https://kick.com/xqc',
+// Initialize Firebase
+const initializeFirebase = () => {
+	const privateKey = Deno.env.get('FIREBASE_PRIVATE_KEY')?.replace(
+		/\\n/gm,
+		'\n',
 	)
+	if (!privateKey) throw new Error('FIREBASE_PRIVATE_KEY is not set')
 
-	if (pusherAppKey && pusherCluster) {
-		try {
-			await connect_pusher(pusherAppKey, pusherCluster)
-			console.log(
-				'%c🔌 Connected to Pusher successfully! ✅',
-				'color: green',
-			)
+	const config = {
+		credential: admin.credential.cert({
+			clientEmail: Deno.env.get('FIREBASE_CLIENT_EMAIL'),
+			privateKey,
+			projectId: Deno.env.get('FIREBASE_PROJECT_ID'),
+		}),
+	}
 
-			const remoteConfigKey = Deno.env.get('REMOTE_CONFIG_KEY')
-			if (!remoteConfigKey) {
-				throw new Error('REMOTE_CONFIG_KEY is not set')
-			}
+	return admin.apps.length ? admin.app() : admin.initializeApp(config)
+}
 
-			await updateRemoteConfigValue(remoteConfigKey, pusherAppKey)
+export const firebase = initializeFirebase()
 
-			latest_key = pusherAppKey
-			latest_cluster = pusherCluster
-			last_time_updated = new Date().toISOString()
-		} catch (error) {
-			console.error('Pusher connection failed:', error)
+// Main function to update Pusher configuration
+export async function updatePusherConfig() {
+	try {
+		const { pusherAppKey, pusherCluster } = await scrapeWebsite(KICK_URL)
+		if (!pusherAppKey || !pusherCluster) {
+			throw new Error('No Pusher App Key or Cluster found')
 		}
-	} else {
-		console.error('No Pusher App Key or Cluster found')
+
+		await connect_pusher(pusherAppKey, pusherCluster)
+		console.log('%c🔌 Connected to Pusher successfully! ✅', 'color: green')
+
+		const remoteConfigKey = Deno.env.get('REMOTE_CONFIG_KEY')
+		if (!remoteConfigKey) {
+			throw new Error('REMOTE_CONFIG_KEY is not set')
+		}
+
+		await updateRemoteConfigValue(remoteConfigKey, pusherAppKey)
+
+		// Update state
+		Object.assign(state, {
+			latestKey: pusherAppKey,
+			latestCluster: pusherCluster,
+			lastTimeUpdated: new Date().toISOString(),
+		})
+	} catch (error) {
+		console.error('Error updating Pusher config:', error)
 	}
 }
 
-if (import.meta.main) {
-	// Run immediately once
-	run()
+// Request handler
+const handleRequest = (req: Request) => {
+	const isHome = req.url.endsWith('/')
+	const { latestKey, latestCluster, lastTimeUpdated } = state
 
-	// Then schedule to run every hour
-	Deno.cron('Check for new Pusher App Key', '0 * * * *', async () => {
-		await run()
-	})
+	if (isHome) {
+		return new Response(
+			render(
+				h(StatusPage, { latestKey, latestCluster, lastTimeUpdated }),
+			),
+			{ headers: { 'content-type': 'text/html' } },
+		)
+	}
+
+	return new Response(
+		render(h(NotFoundPage, {})),
+		{ status: 404, headers: { 'content-type': 'text/html' } },
+	)
+}
+
+if (import.meta.main) {
+	// Initial run
+	await updatePusherConfig()
+
+	// Schedule hourly updates
+	Deno.cron('Check for new Pusher App Key', CRON_SCHEDULE, updatePusherConfig)
 
 	// Start HTTP server
-	Deno.serve({ port: 8000 }, (req) => {
-		if (req.url.endsWith('/')) {
-			const html = render(
-				h(StatusPage, {
-					latestKey: latest_key,
-					latestCluster: latest_cluster,
-					lastTimeUpdated: last_time_updated,
-				}),
-			)
-
-			return new Response(html, {
-				headers: { 'content-type': 'text/html' },
-			})
-		}
-
-		const notFoundHtml = render(h(NotFoundPage, {}))
-		return new Response(notFoundHtml, {
-			status: 404,
-			headers: { 'content-type': 'text/html' },
-		})
-	})
+	Deno.serve({ port: PORT }, handleRequest)
 }

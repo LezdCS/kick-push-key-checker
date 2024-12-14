@@ -1,4 +1,4 @@
-import { firebase } from './main.ts'
+import { firebase } from '../main.ts'
 
 export async function updateRemoteConfigValue(key: string, value: string) {
 	try {
