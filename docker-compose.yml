@@ -1,0 +1,13 @@
+services:
+    kick-push-key-checker-deno:
+        build:
+            context: .
+            dockerfile: Dockerfile.deno
+        restart: always
+        ports:
+            - '8001:8001'
+        volumes:
+            - .:/app
+        working_dir: /app
+        env_file:
+            - .env

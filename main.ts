@@ -11,7 +11,7 @@ import { NotFoundPage } from './views/404/page.tsx'
 
 // Constants
 const KICK_URL = 'https://kick.com/xqc'
-const PORT = 8000
+const PORT = 8001
 const CRON_SCHEDULE = '0 * * * *'
 
 // State management
@@ -91,13 +91,11 @@ const handleRequest = (req: Request) => {
 	)
 }
 
-if (import.meta.main) {
-	// Initial run
-	await updatePusherConfig()
+// Initial run
+await updatePusherConfig()
 
-	// Schedule hourly updates
-	Deno.cron('Check for new Pusher App Key', CRON_SCHEDULE, updatePusherConfig)
+// Schedule hourly updates
+Deno.cron('Check for new Pusher App Key', CRON_SCHEDULE, updatePusherConfig)
 
-	// Start HTTP server
-	Deno.serve({ port: PORT }, handleRequest)
-}
+// Start HTTP server
+Deno.serve({ port: PORT }, handleRequest)

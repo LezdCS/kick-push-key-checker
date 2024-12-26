@@ -1,0 +1,14 @@
+# Use the official Deno image
+FROM denoland/deno:latest
+
+# Set the working directory in the container
+WORKDIR /app
+
+# Copy the rest of the application
+COPY . .
+
+# The port Deno runs on
+EXPOSE 8001
+
+# Run the application
+CMD ["deno", "task", "start"]

@@ -38,3 +38,10 @@ This tool helps maintain up-to-date Pusher configuration for Kick.com by:
    chmod +x scripts/*.bash && ./scripts/install-hooks.bash
    ```
 4. Run development server:
+   ```bash
+   docker compose up -d --remove-orphans
+   ```
+5. Stop the server:
+   ```bash
+   docker compose down --remove-orphans
+   ```
