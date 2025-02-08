@@ -1,7 +1,7 @@
 /** @jsx h */
 import { h } from 'preact'
 import admin from 'firebase-admin'
-import 'jsr:@std/dotenv/load'
+import '@std/dotenv/load'
 import { updateRemoteConfigValue } from './utils/update-remote-config.ts'
 import { connect_pusher } from './utils/kick-websocket.ts'
 import { scrapeWebsite } from './utils/scrapper.ts'
